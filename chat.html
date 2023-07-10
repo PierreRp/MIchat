@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Chat en línea Grupo 1 </title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f1f1f1;
+        }
+
+        .chat-container {
+            max-width: 500px;
+            margin: 0 auto;
+            background-color: #fff;
+            border-radius: 5px;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+            padding: 20px;
+        }
+
+        .chat-title {
+            text-align: center;
+            font-size: 24px;
+            margin-bottom: 20px;
+        }
+
+        .chat-messages {
+            list-style-type: none;
+            padding: 0;
+            margin-bottom: 20px;
+            max-height: 300px;
+            overflow-y: scroll;
+        }
+
+        .chat-message {
+            background-color: #f1f1f1;
+            border-radius: 5px;
+            padding: 10px;
+            margin-bottom: 10px;
+        }
+
+        .chat-message .message-sender {
+            font-weight: bold;
+            margin-bottom: 5px;
+        }
+
+        .chat-message .message-text {
+            margin: 0;
+        }
+
+        .chat-form {
+            display: flex;
+        }
+
+        .chat-form input[type="text"] {
+            flex-grow: 1;
+            padding: 5px;
+            border-radius: 5px 0 0 5px;
+            border: none;
+        }
+
+        .chat-form input[type="submit"] {
+            padding: 5px 10px;
+            border-radius: 0 5px 5px 0;
+            border: none;
+            background-color: #4CAF50;
+            color: #fff;
+            cursor: pointer;
+        }
+    </style>
+</head>
+<body>
+    <div class="chat-container">
+        <h2 class="chat-title">Chat en línea grupo 1</h2>
+        <ul class="chat-messages" id="chat-messages"></ul>
+        <form class="chat-form" id="message-form" action="send_message.php" method="post">
+            <input type="text" name="username" placeholder="Tu nombre" required />
+            <input type="text" name="message" placeholder="Escribe tu mensaje aquí" required />
+            <input type="submit" value="Enviar" />
+        </form>
+    </div>
+
+    <script>
+        // Función para obtener los últimos mensajes desde la base de datos
+        function getMessages() {
+            var xhttp = new XMLHttpRequest();
+            xhttp.onreadystatechange = function() {
+                if (this.readyState == 4 && this.status == 200) {
+                    var messages = JSON.parse(this.responseText);
+                    var chatMessages = document.getElementById("chat-messages");
+                    chatMessages.innerHTML = ""; // Limpiar mensajes anteriores
+                    for (var i = messages.length - 1; i >= 0; i--) {
+                        var message = messages[i];
+                        var li = document.createElement("li");
+                        li.classList.add("chat-message");
+                        var sender = document.createElement("div");
+                        sender.classList.add("message-sender");
+                        sender.innerHTML = message.username;
+                        var text = document.createElement("div");
+                        text.classList.add("message-text");
+                        text.innerHTML = message.message;
+                        li.appendChild(sender);
+                        li.appendChild(text);
+                        chatMessages.appendChild(li);
+                    }
+                    chatMessages.scrollTop = chatMessages.scrollHeight; // Hacer scroll hacia abajo automáticamente
+                }
+            };
+            xhttp.open("GET", "get_messages.php", true);
+            xhttp.send();
+        }
+
+        // Función para enviar un nuevo mensaje
+        function sendMessage(event) {
+            event.preventDefault();
+            var usernameInput = document.getElementsByName("username")[0];
+            var messageInput = document.getElementsByName("message")[0];
+            var username = usernameInput.value.trim();
+            var message = messageInput.value.trim();
+            if (username !== "" && message !== "") {
+                var xhttp = new XMLHttpRequest();
+                xhttp.onreadystatechange = function() {
+                    if (this.readyState == 4 && this.status == 200) {
+                        messageInput.value = "";
+                        getMessages(); // Actualizar mensajes después de enviar uno nuevo
+                    }
+                };
+                xhttp.open("POST", "send_message.php", true);
+                xhttp.setRequestHeader("Content-type", "application/x-www-form-urlencoded");
+                xhttp.send("username=" + encodeURIComponent(username) + "&message=" + encodeURIComponent(message));
+            }
+        }
+
+        // Obtener los mensajes al cargar la página
+        getMessages();
+
+        // Actualizar los mensajes cada 1 segundo
+        setInterval(getMessages, 1000);
+
+        // Enviar mensaje cuando se envíe el formulario
+        var messageForm = document.getElementById("message-form");
+        messageForm.addEventListener("submit", sendMessage);
+    </script>
+</body>
+</html>
